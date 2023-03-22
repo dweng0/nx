@@ -44,6 +44,7 @@ import { e2eProjectGenerator } from '../e2e-project/e2e-project';
 import { setupDockerGenerator } from '../setup-docker/setup-docker';
 
 import { Schema } from './schema';
+import { mapLintPattern } from '@nrwl/linter/src/generators/lint-project/lint-project';
 
 export interface NormalizedSchema extends Schema {
   appProjectRoot: string;
@@ -271,7 +272,11 @@ export async function addLintingToApplication(
       joinPathFragments(options.appProjectRoot, 'tsconfig.app.json'),
     ],
     eslintFilePatterns: [
-      `${options.appProjectRoot}/**/*.${options.js ? 'js' : 'ts'}`,
+      mapLintPattern(
+        options.appProjectRoot,
+        options.js ? 'js' : 'ts',
+        options.rootProject
+      ),
     ],
     unitTestRunner: options.unitTestRunner,
     skipFormat: true,
@@ -375,11 +380,8 @@ export async function applicationGenerator(tree: Tree, schema: Schema) {
 
   updateTsConfigOptions(tree, options);
 
-  if (options.linter !== Linter.None) {
-    const lintTask = await addLintingToApplication(tree, {
-      ...options,
-      skipFormat: true,
-    });
+  if (options.linter === Linter.EsLint) {
+    const lintTask = await addLintingToApplication(tree, options);
     tasks.push(lintTask);
   }
 
